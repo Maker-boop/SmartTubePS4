@@ -17,11 +17,15 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Build with OpenOrbis toolchain
-        uses: OpenOrbis/toolchain-action@main
-        with:
-          version: v0.5.4
-          command: make clean && make
+      - name: Build with OpenOrbis toolchain container
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            openorbisofficial/toolchain:v0.5.4 \
+            bash -lc 'make clean && make'
       - name: Verify package output
         shell: bash
         run: |
