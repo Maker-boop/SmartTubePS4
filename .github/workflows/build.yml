@@ -24,7 +24,7 @@ jobs:
           docker run --rm \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
-            openorbisofficial/toolchain:v0.5.4 \
+            openorbisofficial/toolchain:latest \
             bash -lc 'make clean && make'
       - name: Verify package output
         shell: bash
