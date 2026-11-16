@@ -25,7 +25,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
-            bash -lc 'echo "Toolchain packaging binaries:"; find /lib/OpenOrbisSDK -maxdepth 5 -type f \( -iname "*fself*" -o -iname "*pkgtool*" -o -iname "*create-eboot*" \) -print; make clean && make'
+            bash -lc 'make clean && make'
       - name: Verify package output
         shell: bash
         run: |

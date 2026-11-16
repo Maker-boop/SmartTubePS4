@@ -31,7 +31,7 @@ $(OBJ): native/src/main_ps4.c | $(BUILD_DIR)
 $(ELF): $(OBJ)
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 eboot.bin: $(ELF)
-	$(BIN_DIR)/create-fself -in=$(ELF) -out=$@ --eboot "eboot.bin" --paid 0x3800000000000011
+	$(BIN_DIR)/create-eboot -in=$< -out=$@ --eboot "eboot.bin" --paid 0x3800000000000011
 sce_sys/about/right.sprx sce_module/libc.prx sce_module/libSceFios2.prx: | prepare
 sce_sys/param.sfo: Makefile | prepare
 	$(BIN_DIR)/PkgTool.Core sfo_new $@
