@@ -1,0 +1,8 @@
+build/
+*.elf
+*.o
+*.pkg
+pkg.gp4.tmp
+sce_sys/param.sfo
+sce_sys/about/right.sprx
+sce_module/

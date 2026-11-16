@@ -1,0 +1,47 @@
+name: Build SmartTube PS4 v2.9 PKG
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "Makefile"
+      - "pkg.gp4"
+      - "native/**"
+      - "sce_sys/**"
+      - ".github/workflows/build.yml"
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Build with OpenOrbis toolchain
+        uses: OpenOrbis/toolchain-action@main
+        with:
+          version: v0.5.4
+          command: make clean && make
+      - name: Verify package output
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=( *.pkg )
+          if [ "${#packages[@]}" -eq 0 ]; then
+            echo "No PKG file was produced."
+            exit 1
+          fi
+          ls -lh "${packages[@]}"
+          test -s eboot.bin
+          test -s pkg.gp4
+      - name: Upload PKG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartTubePS4-v2.9-PKG
+          if-no-files-found: error
+          path: |
+            *.pkg
+            eboot.bin
+            pkg.gp4
+            build/smarttube_ps4.elf
