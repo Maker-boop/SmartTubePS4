@@ -10,9 +10,9 @@ OBJ := $(BUILD_DIR)/main_ps4.o
 ELF := $(BUILD_DIR)/smarttube_ps4.elf
 CC := clang
 LD := ld.lld
-LIBS := -lc -lkernel -lc++ -lSceUserService -lSceVideoOut -lScePad -lSceSysmodule -lSceAudioOut -lSDL2
+LIBS := -lc -lkernel -lc++ -lSceUserService -lSceVideoOut -lSceAudioOut -lScePad -lSceSysmodule -lSDL2
 CFLAGS := --target=x86_64-pc-freebsd12-elf -fPIC -funwind-tables -fuse-init-array -O2 -Wall -Wextra -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
-LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr
+LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 .PHONY: all clean prepare
 all: $(CONTENT_ID).pkg
 prepare:
@@ -29,9 +29,9 @@ $(BUILD_DIR):
 $(OBJ): native/src/main_ps4.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 $(ELF): $(OBJ)
-	$(LD) $(LDFLAGS) -o $@ -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o $^
+	$(LD) $^ -o $@ $(LDFLAGS)
 eboot.bin: $(ELF)
-	$(BIN_DIR)/create-eboot -in=$< -out=$(BUILD_DIR)/smarttube_ps4.oelf --eboot "$@" --paid 0x3800000000000011
+	$(BIN_DIR)/create-eboot -in=$< -out=$@ --paid 0x3800000000000011
 sce_sys/about/right.sprx sce_module/libc.prx sce_module/libSceFios2.prx: | prepare
 sce_sys/param.sfo: Makefile | prepare
 	$(BIN_DIR)/PkgTool.Core sfo_new $@
