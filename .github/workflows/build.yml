@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm \
+          docker run --rm --user 0:0 \
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
