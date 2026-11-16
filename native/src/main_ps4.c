@@ -15,7 +15,7 @@ static int init_controller(void) {
     memset(&params, 0, sizeof(params));
     params.priority = 0x2BC;
     rc = sceUserServiceInitialize(&params);
-    if (rc != 0 && rc != 0x80960002)
+    if (rc != 0 && rc != (int32_t)0x80960002u)
         fprintf(stderr, "sceUserServiceInitialize: 0x%08x\n", rc);
     rc = sceUserServiceGetInitialUser(&user_id);
     if (rc != 0 || user_id < 0) {
