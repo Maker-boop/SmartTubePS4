@@ -15,3 +15,12 @@ Open **Actions** → **Build SmartTube PS4 v2.9 PKG** → **Run workflow**. Down
 
 ## Not included in v2.9
 No YouTube playback, ad blocking, SponsorBlock integration, or sponsor skipping is implemented in this native milestone. SDL2's static library references PS4 audio output symbols, so the audio output stub is linked to satisfy SDL2; this milestone does not implement app audio playback.
+
+
+## v2.9 native PS4 milestone
+
+The v2.9 target is a minimal native PS4 application: an SDL2-rendered status screen plus direct OpenOrbis DualShock 4 polling through `libScePad` and `libSceUserService`. It does not include YouTube playback, SponsorBlock integration, networking, or video decoding.
+
+The cloud workflow uses the OpenOrbis toolchain Docker image for the PS4 compile/link/package steps and builds OpenOrbis `create-fself` v1.3 as a static Linux helper for the final EBOOT conversion. The PS4 package's required app files are `eboot.bin`, `sce_sys/param.sfo`, and `sce_sys/icon0.png`; optional sample LiveArea assets are not treated as required dependencies.
+
+A successful CI package build is not proof of boot compatibility. The resulting PKG must still be installed and tested on the target PS4 firmware/GoldHEN setup.
