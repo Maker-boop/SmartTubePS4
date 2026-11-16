@@ -6,12 +6,16 @@ CONTENT_ID := IV0000-STBP00001_00-SMARTTUBEPS42900
 TOOLCHAIN := $(OO_PS4_TOOLCHAIN)
 BIN_DIR := $(TOOLCHAIN)/bin/linux
 BUILD_DIR := build
-FSELF := .tools/create-fself
+# create-fself: the CI builds it into .tools/, the released toolchain ships one in bin/linux.
+FSELF := $(firstword $(wildcard .tools/create-fself) $(wildcard $(TOOLCHAIN)/bin/linux/create-fself))
+# Sce module blobs live in bin/data/modules in the released (and Docker) toolchain,
+# in src/modules in a source checkout.
+MODULE_SRC := $(firstword $(wildcard $(TOOLCHAIN)/bin/data/modules) $(wildcard $(TOOLCHAIN)/src/modules) $(wildcard $(TOOLCHAIN)/samples/hello_world/sce_module))
 OBJ := $(BUILD_DIR)/main_ps4.o
 ELF := $(BUILD_DIR)/smarttube_ps4.elf
 CC := clang
 LD := ld.lld
-LIBS := -lc -lkernel -lc++ -lSceUserService -lSceVideoOut -lSceAudioOut -lScePad -lSceSysmodule -lSDL2
+LIBS := -lc -lkernel -lSceUserService -lSceVideoOut -lScePad -lSceAudioOut -lSceNet -lSceSysmodule
 CFLAGS := --target=x86_64-pc-freebsd12-elf -fPIC -funwind-tables -O2 -Wall -Wextra -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
 LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib $(LIBS) $(TOOLCHAIN)/lib/crt1.o
 .PHONY: all clean prepare
@@ -19,11 +23,12 @@ all: $(CONTENT_ID).pkg
 prepare:
 	@test -n "$(OO_PS4_TOOLCHAIN)" || (echo "OO_PS4_TOOLCHAIN is not set"; exit 1)
 	@mkdir -p $(BUILD_DIR) sce_sys/about sce_module
-	@test -x "$(FSELF)" || (echo "OpenOrbis create-fself v1.3 tool is missing"; exit 1)
-	@test -f "$(TOOLCHAIN)/bin/data/modules/libc.prx" || (echo "OpenOrbis libc.prx module not found"; exit 1)
-	@test -f "$(TOOLCHAIN)/bin/data/modules/libSceFios2.prx" || (echo "OpenOrbis libSceFios2.prx module not found"; exit 1)
-	cp "$(TOOLCHAIN)/bin/data/modules/libc.prx" sce_module/libc.prx
-	cp "$(TOOLCHAIN)/bin/data/modules/libSceFios2.prx" sce_module/libSceFios2.prx
+	@test -n "$(FSELF)" -a -x "$(FSELF)" || (echo "OpenOrbis create-fself tool not found (.tools/create-fself or $(TOOLCHAIN)/bin/linux/create-fself)"; exit 1)
+	@test -n "$(MODULE_SRC)" || (echo "OpenOrbis Sce module blobs not found under $(TOOLCHAIN)"; exit 1)
+	@test -f "$(MODULE_SRC)/libc.prx" || (echo "OpenOrbis libc.prx module not found"; exit 1)
+	@test -f "$(MODULE_SRC)/libSceFios2.prx" || (echo "OpenOrbis libSceFios2.prx module not found"; exit 1)
+	cp "$(MODULE_SRC)/libc.prx" sce_module/libc.prx
+	cp "$(MODULE_SRC)/libSceFios2.prx" sce_module/libSceFios2.prx
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 $(OBJ): native/src/main_ps4.c | $(BUILD_DIR)
