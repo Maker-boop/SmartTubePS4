@@ -17,6 +17,27 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Checkout OpenOrbis create-fself v1.3
+        uses: actions/checkout@v4
+        with:
+          repository: OpenOrbis/create-fself
+          ref: v1.3
+          path: .tools/create-fself-src
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+
+      - name: Build create-fself
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tools
+          cd .tools/create-fself-src/cmd/create-fself
+          CGO_ENABLED=0 go build -o ../../../create-fself -modfile=go-linux.mod
+          test -x ../../../create-fself
       - name: Build with OpenOrbis toolchain container
         shell: bash
         run: |
@@ -25,17 +46,7 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
-            bash -lc '
-            set -e
-            echo "OpenOrbis packaging tools:"
-            ls -1 "$OO_PS4_TOOLCHAIN/bin/linux" | grep -E "create|PkgTool" || true
-            echo "OpenOrbis SDL2 sample packaging recipe:"
-            grep -n "create-" "$OO_PS4_TOOLCHAIN/samples/SDL2/Makefile" || true
-            cp -a "$OO_PS4_TOOLCHAIN/samples/SDL2" /tmp/openorbis-sdl2-reference
-            (cd /tmp/openorbis-sdl2-reference && make clean && make)
-            cd /workspace
-            make clean && make
-          '
+            bash -lc 'make clean && make'
       - name: Verify package output
         shell: bash
         run: |
