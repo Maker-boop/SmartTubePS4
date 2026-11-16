@@ -7,6 +7,8 @@
  * No SDL2 anywhere.
  */
 
+/* sys/types.h first: the OpenOrbis kernel types use u_short/u_int. */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,7 +17,6 @@
 #include <orbis/AudioOut.h>
 #include <orbis/Net.h>
 #include <orbis/Pad.h>
-#include <orbis/Sysmodule.h>
 #include <orbis/UserService.h>
 #include <orbis/VideoOut.h>
 #include <orbis/libkernel.h>
@@ -28,10 +29,12 @@
 #define FRAME_INTERVAL_US 16000
 #define AUDIO_SAMPLE_RATE 48000
 #define AUDIO_GRAIN 512
-#define NET_POOL_SIZE (4 * 1024)
 
-/* A8R8G8B8, linear tiling: the pixel value is 0x80RRGGBB. */
-#define VIDEO_PIXEL_FORMAT 0x80000000u
+/* Literal values rather than the ORBIS_VIDEO_OUT_* names: the OpenOrbis
+ * release the CI container ships (v0.5.1) does not define them. */
+#define VIDEO_PIXEL_FORMAT 0x80000000u /* A8R8G8B8; pixel value is 0x80RRGGBB */
+#define VIDEO_TILING_LINEAR 1
+#define VIDEO_ASPECT_RATIO_16_9 0
 #define OPAQUE 0x80000000u
 
 static uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
@@ -40,7 +43,7 @@ static uint32_t rgb(uint8_t r, uint8_t g, uint8_t b) {
 
 /* ---------------------------------------------------------------- user --- */
 
-static int32_t g_user_id = ORBIS_USER_SERVICE_USER_ID_INVALID;
+static int32_t g_user_id = -1;
 
 static int init_user(void) {
     OrbisUserServiceInitializeParams params;
@@ -55,7 +58,7 @@ static int init_user(void) {
     rc = sceUserServiceGetInitialUser(&g_user_id);
     if (rc != 0 || g_user_id < 0) {
         fprintf(stderr, "No signed-in user available.\n");
-        g_user_id = ORBIS_USER_SERVICE_USER_ID_INVALID;
+        g_user_id = -1;
         return -1;
     }
     return 0;
@@ -125,8 +128,8 @@ static int init_video(void) {
     for (i = 0; i < FRAME_BUFFER_COUNT; ++i)
         g_frames[i] = (uint32_t *)((uint8_t *)g_video_mem + frame_size * i);
 
-    sceVideoOutSetBufferAttribute(&attr, VIDEO_PIXEL_FORMAT, ORBIS_VIDEO_OUT_TILING_MODE_LINEAR,
-                                  ORBIS_VIDEO_OUT_ASPECT_RATIO_16_9, SCREEN_W, SCREEN_H, SCREEN_W);
+    sceVideoOutSetBufferAttribute(&attr, VIDEO_PIXEL_FORMAT, VIDEO_TILING_LINEAR,
+                                  VIDEO_ASPECT_RATIO_16_9, SCREEN_W, SCREEN_H, SCREEN_W);
     rc = sceVideoOutRegisterBuffers(g_video_handle, 0, (void *const *)g_frames,
                                     FRAME_BUFFER_COUNT, &attr);
     if (rc < 0) {
@@ -226,36 +229,17 @@ static void shutdown_audio(void) {
 /* ----------------------------------------------------------------- net --- */
 
 static int g_net_ready = 0;
-static int g_net_pool = -1;
 
 static int init_net(void) {
-    int32_t rc;
-
-    rc = sceSysmoduleLoadModuleInternal(ORBIS_SYSMODULE_INTERNAL_NET);
-    if (rc < 0)
-        fprintf(stderr, "sceSysmoduleLoadModuleInternal(NET): 0x%08x\n", (uint32_t)rc);
-
-    rc = sceNetInit();
-    if (rc < 0) {
-        fprintf(stderr, "sceNetInit: 0x%08x\n", (uint32_t)rc);
-        return -1;
-    }
+    /* The v0.5.1 headers the CI container ships declare sceNetInit() as void
+     * and expose no net sysmodule id, so the return value is not checked and
+     * the internal sysmodule load is left to libSceNet itself. */
+    sceNetInit();
     g_net_ready = 1;
-
-    g_net_pool = sceNetPoolCreate("SmartTubePS4", NET_POOL_SIZE, 0);
-    if (g_net_pool < 0) {
-        fprintf(stderr, "sceNetPoolCreate: 0x%08x\n", (uint32_t)g_net_pool);
-        g_net_pool = -1;
-    }
-
     return 0;
 }
 
 static void shutdown_net(void) {
-    if (g_net_pool >= 0) {
-        sceNetPoolDestroy(g_net_pool);
-        g_net_pool = -1;
-    }
     if (g_net_ready) {
         sceNetTerm();
         g_net_ready = 0;
