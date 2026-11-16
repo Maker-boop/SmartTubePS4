@@ -25,7 +25,17 @@ jobs:
             -v "$GITHUB_WORKSPACE:/workspace" \
             -w /workspace \
             openorbisofficial/toolchain:latest \
-            bash -lc 'make clean && make'
+            bash -lc '
+            set -e
+            echo "OpenOrbis packaging tools:"
+            ls -1 "$OO_PS4_TOOLCHAIN/bin/linux" | grep -E "create|PkgTool" || true
+            echo "OpenOrbis SDL2 sample packaging recipe:"
+            grep -n "create-" "$OO_PS4_TOOLCHAIN/samples/SDL2/Makefile" || true
+            cp -a "$OO_PS4_TOOLCHAIN/samples/SDL2" /tmp/openorbis-sdl2-reference
+            (cd /tmp/openorbis-sdl2-reference && make clean && make)
+            cd /workspace
+            make clean && make
+          '
       - name: Verify package output
         shell: bash
         run: |
