@@ -14,4 +14,4 @@ This is a development milestone, not a verified release. The build must pass in 
 Open **Actions** → **Build SmartTube PS4 v2.9 PKG** → **Run workflow**. Download the `SmartTubePS4-v2.9-PKG` artifact from the completed run.
 
 ## Not included in v2.9
-No YouTube playback, network transport, ad blocking, SponsorBlock integration, or sponsor skipping is implemented in this native milestone. Those remain later development work.
+No YouTube playback, ad blocking, SponsorBlock integration, or sponsor skipping is implemented in this native milestone. SDL2's static library references PS4 audio output symbols, so the audio output stub is linked to satisfy SDL2; this milestone does not implement app audio playback.

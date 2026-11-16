@@ -10,7 +10,7 @@ OBJ := $(BUILD_DIR)/main_ps4.o
 ELF := $(BUILD_DIR)/smarttube_ps4.elf
 CC := clang
 LD := ld.lld
-LIBS := -lc -lkernel -lc++ -lSceUserService -lSceVideoOut -lScePad -lSceSysmodule -lSDL2
+LIBS := -lc -lkernel -lc++ -lSceUserService -lSceVideoOut -lScePad -lSceSysmodule -lSceAudioOut -lSDL2
 CFLAGS := --target=x86_64-pc-freebsd12-elf -fPIC -funwind-tables -O2 -Wall -Wextra -isysroot $(TOOLCHAIN) -isystem $(TOOLCHAIN)/include
 LDFLAGS := -m elf_x86_64 -pie --script $(TOOLCHAIN)/link.x --eh-frame-hdr -L$(TOOLCHAIN)/lib
 .PHONY: all clean prepare
